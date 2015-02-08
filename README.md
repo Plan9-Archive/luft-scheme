@@ -1,7 +1,7 @@
 luft
 ====
 
-poor man's lisp.
+poor man's scheme.
 
 install
 -------
