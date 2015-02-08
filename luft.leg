@@ -1,0 +1,24 @@
+program		= - s:sexpr -				{ yy->L->inval = s; }
+
+sexpr		= - a:atom -				{ $$ = a; }
+		| - l:list -				{ $$ = l; }
+
+atom		= a:number				{ $$ = a; }
+		| a:symbol				{ $$ = a; }
+
+list		= lpar - rpar				{ $$ = llist(yy->L); }
+		| l:lpar - s1:sexpr			{ l = llist(yy->L); lappend(yy->L, l, s1); }
+		( s2:sexpr				{ lappend(yy->L, l, s2); }
+		)* - rpar				{ $$ = l; }
+
+number		= < '0x'? [0-9]+ >			{ $$ = lnum(yy->L, strtoll(yytext, nil, 0)); }
+
+symbol		= < [^\n\t 0-9();] [^\n\t ();]* >	{ $$ = lsym(yy->L, yytext); }
+
+lpar		= '('
+rpar		= ')'
+
+-		= space*
+
+space		= [\n\t ] | comment
+comment		= ';' [^\n]*
