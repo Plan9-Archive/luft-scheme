@@ -9,22 +9,6 @@
 #endif
 
 static int
-lwerrstr(LuftVM *L, char *fmt, ...)
-{
-	va_list arg;
-	char buf[ERRMAX];
-
-	va_start(arg, fmt);
-	vseprint(buf, buf+ERRMAX, fmt, arg);
-	va_end(arg);
-
-	snprint(L->errstr, ERRMAX, "error line %d: %s", L->inln, buf);
-
-	longjmp(L->errjmp, 1);
-	return 0;
-}
-
-static int
 getch(LuftVM *L)
 {
 	int c;
