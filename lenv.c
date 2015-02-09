@@ -30,7 +30,6 @@ lenvfind(LEnv *e, char *s)
 {
 	u32int h;
 	char *p;
-	LEnv *newe;
 	LEnvHash *hsh;
 
 	h = 0;
@@ -94,8 +93,34 @@ lenv(LuftVM *L, LEnv *parent)
 	return env;
 }
 
+LEnv*
+lenvset(LuftVM *L, LVal *params, LVal *args, LEnv *outer)
+{
+	int i, min;
+	LEnv *env;
+	LVal *param, *arg;
+
+	assert(params != nil && params->type == TLIST);
+	assert(args != nil && args->type == TLIST);
+
+	min = params->len < args->len ? params->len : args->len;
+
+	env = lenv(L, outer);
+
+	for(i = 0; i < min; i++){
+		param = params->list[i];
+		if(param->type != TSYMBOL)
+			lufterr(L, "parameter %V not a symbol", param);
+		arg = args->list[i];
+
+		lenventer(env, param->s, arg);
+	}
+
+	return env;
+}
+
 static void
-lenvdel(LuftVM *L, LEnv *env)
+lenvdel(LuftVM*, LEnv *env)
 {
 	int i;
 	LEnvHash *hsh, *next;
@@ -106,6 +131,8 @@ lenvdel(LuftVM *L, LEnv *env)
 			free(hsh);
 		}
 	}
+
+	free(env);
 }
 
 static void gcmarkval(LVal *v);
@@ -114,10 +141,8 @@ static void
 gcmarkenv(LEnv *env)
 {
 	int i;
-	LGc *g;
 	LEnvHash *hsh;
 	LVal *v;
-	LEnv *e;
 
 	if(env->gcmark > 0)
 		return;
@@ -159,10 +184,7 @@ gcmarkval(LVal *v)
 void
 lenvgc(LuftVM *L)
 {
-	int i, l;
 	LGc *m, **p, *next;
-	LEnvHash *hsh;
-	LVal *v;
 
 	for(m = L->gcl; m != nil; m = m->gclink)
 		m->gcmark = 0;

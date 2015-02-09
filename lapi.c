@@ -14,13 +14,87 @@ luftvminit(LuftVM *L)
 	lenventer(L->env, "#f", lsym(L, "#f"));
 
 	/* math */
-	lenventer(L->env, "+", lproc(L, lprocadd));
-	lenventer(L->env, "-", lproc(L, lprocsub));
-	lenventer(L->env, "*", lproc(L, lprocmul));
-	lenventer(L->env, "/", lproc(L, lprocdiv));
+	luftproc(L, "+", lprocadd);
+	luftproc(L, "-", lprocsub);
+	luftproc(L, "*", lprocmul);
+	luftproc(L, "/", lprocdiv);
+	luftproc(L, "=", lproccmp);
 
-	lenventer(L->env, "typename", lproc(L, lproctypename));
-	lenventer(L->env, "graphdump", lproc(L, lprocgraphdump));
+	/* list manipulation */
+	luftproc(L, "list", lproclist);
+
+	luftproc(L, "print", lprocprint);
+	luftproc(L, "typename", lproctypename);
+	luftproc(L, "graphdump", lprocgraphdump);
+}
+
+static int
+Vfmt(Fmt *f)
+{
+	char extra[32];
+	LVal *v;
+
+	extra[0] = '\0';
+	v = va_arg(f->args, LVal*);
+
+	if(v == nil)
+		return fmtprint(f, "<nil>");
+
+	switch(v->type){
+	case TSYMBOL:
+		snprint(extra, sizeof(extra), "%s", v->s);
+		break;
+	case TNUMBER:
+		snprint(extra, sizeof(extra), "%lld", v->i);
+		break;
+	case TLIST:
+		snprint(extra, sizeof(extra), "%d", v->len);
+		break;
+	case TPROC:
+		snprint(extra, sizeof(extra), "%#p", v->proc);
+		break;
+	case TLAMBDA:
+		snprint(extra, sizeof(extra), "env %#p", v->env);
+		break;
+	}
+
+	return fmtprint(f, "%s (%s)", ltypename(v->type), extra);
+}
+
+static int
+Efmt(Fmt *f)
+{
+	int n, i;
+	LVal *v;
+
+	n = 0;
+	v = va_arg(f->args, LVal*);
+
+	switch(v->type){
+	case TSYMBOL:
+		n += fmtprint(f, "%s", v->s);
+		break;
+	case TNUMBER:
+		n += fmtprint(f, "%lld", v->i);
+		break;
+	case TLIST:
+		n += fmtstrcpy(f, "(");
+		for(i = 0; i < v->len; i++){
+			if(i > 0)
+				n += fmtstrcpy(f, " ");
+			n += fmtprint(f, "%E", v->list[i]);
+		}
+		n += fmtstrcpy(f, ")");
+		break;
+	case TPROC:
+		n += fmtstrcpy(f, "<Proc>");
+		break;
+	case TLAMBDA:
+		n += fmtstrcpy(f, "<Lambda>");
+		break;
+	}
+
+	return n;
 }
 
 LuftVM*
@@ -32,6 +106,7 @@ luftvm(void)
 	if(!luftinit){
 		luftinit = 1;
 		fmtinstall('V', Vfmt);
+		fmtinstall('E', Efmt);
 	}
 
 	vm = mallocz(sizeof(*vm), 1);
@@ -39,6 +114,12 @@ luftvm(void)
 	luftvminit(vm);
 
 	return vm;
+}
+
+void
+luftproc(LuftVM *L, char *sym, LVal *(*proc)(LuftVM*, LVal*))
+{
+	lenventer(L->env, sym, lproc(L, proc));
 }
 
 int
@@ -56,7 +137,7 @@ luftdo(LuftVM *L, char *code, int len)
 	}
 
 	rv = lufteval(L, v, L->env);
-	print(" = %V\n", rv);
+	print("%E\n", rv);
 
 	lenvgc(L);
 	return 0;

@@ -110,37 +110,6 @@ ltypename(int ty)
 	return "<missing type name>";
 }
 
-/* format LVal */
-int
-Vfmt(Fmt *f)
-{
-	char extra[32];
-	LVal *v;
-
-	extra[0] = '\0';
-	v = va_arg(f->args, LVal*);
-
-	if(v == nil)
-		return fmtprint(f, "<nil>");
-
-	switch(v->type){
-	case TSYMBOL:
-		snprint(extra, sizeof(extra), "%s", v->s);
-		break;
-	case TNUMBER:
-		snprint(extra, sizeof(extra), "%lld", v->i);
-		break;
-	case TLIST:
-		snprint(extra, sizeof(extra), "%d", v->len);
-		break;
-	case TPROC:
-		snprint(extra, sizeof(extra), "%#p", v->proc);
-		break;
-	}
-
-	return fmtprint(f, "%s (%s)", ltypename(v->type), extra);
-}
-
 LVal*
 luftparse(LuftVM *L, char *code, int len)
 {
@@ -227,7 +196,7 @@ lufteval(LuftVM *L, LVal *val, LEnv *env)
 				assert(val->len == 3);
 				rv = val->list[1];
 				if(rv->type != TSYMBOL)
-					sysfatal("define: not a symbol");
+					lufterr(L, "define: not a symbol: %V", rv);
 				rv = lufteval(L, val->list[2], env);
 				lenventer(env, val->list[1]->s, rv);
 			} else if(strcmp(sym->s, "lambda") == 0){
@@ -254,7 +223,7 @@ lufteval(LuftVM *L, LVal *val, LEnv *env)
 			rv = proc->proc(L, list);
 			break;
 		case TLAMBDA:
-			rv = lufteval(L, proc->list[2], proc->env);
+			rv = lufteval(L, proc->list[2], lenvset(L, proc->list[1], list, proc->env));
 			break;
 		default:
 			rv = lenvlookup(env, "nil");

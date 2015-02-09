@@ -13,16 +13,16 @@ HFILES=\
 	/sys/include/luft.h\
 
 CLEANFILES=\
+	$HFILES\
 	$O.test\
 
 </sys/src/cmd/mklib
 
-CFLAGS=-FTVp
-
 /sys/include/luft.h:	luft.h
-	test -e $target || cp $prereq $target
+	cp $prereq $target
 
 luft.$O:	luft.leg.c
+	$CC -FTVp luft.c
 
 luft.leg.c:	luft.leg
 	leg -o $target < $prereq

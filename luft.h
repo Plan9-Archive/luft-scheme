@@ -68,8 +68,12 @@ struct LuftVM
 	LEnv *env;
 };
 
+#pragma	varargck	type "V"	LVal*
+#pragma	varargck	type "E"	LVal*
+
 /* luft public api */
 LuftVM *luftvm(void);
+void luftproc(LuftVM *L, char *sym, LVal *(*proc)(LuftVM*, LVal*));
 int luftdo(LuftVM *L, char *code, int len);
 void lufterr(LuftVM *L, char *fmt, ...);
 char *lufterrstr(LuftVM *L);

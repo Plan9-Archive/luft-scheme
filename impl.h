@@ -21,7 +21,6 @@ struct LEnv
 
 /* parse.c */
 char *ltypename(int ty);
-int Vfmt(Fmt *f);
 LVal *luftparse(LuftVM *L, char *code, int len);
 LVal *lufteval(LuftVM *L, LVal *val, LEnv *env);
 
@@ -32,6 +31,7 @@ LVal *lnum(LuftVM *L, vlong v);
 LVal *lsym(LuftVM *L, char *s);
 LVal *llist(LuftVM *L);
 LVal *lappend(LuftVM *L, LVal*, LVal*);
+LVal *llistcopy(LuftVM *L, LVal *v);
 LVal *lproc(LuftVM *L, LVal *(*proc)(LuftVM *, LVal *));
 
 /* lenv.c */
@@ -39,6 +39,7 @@ void lenventer(LEnv *e, char *s, LVal *v);
 LEnv *lenvfind(LEnv *e, char *s);
 LVal *lenvlookup(LEnv *e, char *s);
 LEnv *lenv(LuftVM *L, LEnv *parent);
+LEnv *lenvset(LuftVM *L, LVal *params, LVal *args, LEnv *outer);
 void lenvgc(LuftVM *L);
 
 /* lproc.c */
@@ -46,7 +47,11 @@ LVal *lprocadd(LuftVM *L, LVal *v);
 LVal *lprocsub(LuftVM *L, LVal *v);
 LVal *lprocmul(LuftVM *L, LVal *v);
 LVal *lprocdiv(LuftVM *L, LVal *v);
+LVal *lproccmp(LuftVM *L, LVal *v);
 
+LVal *lproclist(LuftVM *L, LVal *v);
+
+LVal *lprocprint(LuftVM *L, LVal *v);
 LVal *lproctypename(LuftVM *L, LVal *v);
 LVal *lprocgraphdump(LuftVM *L, LVal *v);
 

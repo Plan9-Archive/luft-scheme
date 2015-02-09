@@ -4,9 +4,8 @@
 #include "impl.h"
 
 void
-ldel(LuftVM *L, LVal *v)
+ldel(LuftVM*, LVal *v)
 {
-	int i;
 	switch(v->type){
 	case TNUMBER:
 	case TPROC:
@@ -14,8 +13,12 @@ ldel(LuftVM *L, LVal *v)
 	case TLAMBDA:
 	case TLIST:
 		free(v->list);
+		v->len = 0;
+		v->list = nil;
+		break;
 	case TSYMBOL:
 		free(v->s);
+		v->s = nil;
 		break;
 	}
 
@@ -65,12 +68,29 @@ llist(LuftVM *L)
 }
 
 LVal*
-lappend(LuftVM *L, LVal *v, LVal *x)
+lappend(LuftVM*, LVal *v, LVal *x)
 {
 	v->len++;
 	v->list = realloc(v->list, sizeof(LVal*) * v->len);
 	v->list[v->len-1] = x;
 	return v;
+}
+
+LVal*
+llistcopy(LuftVM *L, LVal *v)
+{
+	int i;
+	LVal *rv;
+
+	if(v->type != TLIST)
+		lufterr(L, "llistcopy: not a list: %V", v);
+
+	rv = llist(L);
+	for(i = 0; i < v->len; i++){
+		lappend(L, rv, v->list[i]);
+	}
+
+	return rv;
 }
 
 LVal*
